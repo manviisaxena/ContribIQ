@@ -1,0 +1,40 @@
+.bg-radial {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 15% 60%, rgba(27, 144, 255, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(0, 112, 242, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(0, 42, 134, 0.35) 0%, transparent 60%);
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(60px);
+  opacity: 0.12;
+  animation: drift 14s ease-in-out infinite alternate;
+}
+
+.orb-1 { width: 380px; height: 380px; background: var(--b6); top: -80px; left: -100px; animation-delay: 0s; }
+.orb-2 { width: 280px; height: 280px; background: var(--b7); bottom: -60px; right: -60px; animation-delay: -5s; }
+.orb-3 { width: 200px; height: 200px; background: var(--b4); top: 40%; right: 10%; animation-delay: -9s; }
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(30px, 20px) scale(1.08); }
+}
