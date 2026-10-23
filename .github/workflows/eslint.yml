@@ -30,6 +30,12 @@ jobs:
           npm install eslint@8.10.0
           npm install @microsoft/eslint-formatter-sarif@3.1.0
 
+      - name: Create ESLint config if missing
+        run: |
+          if [ ! -f .eslintrc.js ] && [ ! -f .eslintrc.json ] && [ ! -f .eslintrc.yml ]; then
+            echo 'module.exports = { env: { browser: true, es2021: true, node: true }, extends: ["eslint:recommended"], parserOptions: { ecmaVersion: "latest", sourceType: "module" }, ignorePatterns: ["node_modules/", "dist/", "build/"] }' > .eslintrc.js
+          fi
+
       - name: Run ESLint
         env:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
