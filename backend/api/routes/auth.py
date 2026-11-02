@@ -50,8 +50,6 @@ async def register(body: UserCreate, db: AsyncSession = Depends(get_db)):
         "refresh_token": create_refresh_token(user.id),
     }
 
-
-# Intentional bug: no rate limiting — brute force attack possible
 @router.post("/login")
 async def login(body: UserLogin, db: AsyncSession = Depends(get_db)):
     from sqlalchemy import select
