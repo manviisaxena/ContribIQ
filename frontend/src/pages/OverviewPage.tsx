@@ -24,7 +24,7 @@ export default function OverviewPage() {
         openIssues={metadata.open_issues} language={metadata.language} topics={metadata.topics} />
       <div className="page-body">
         <div className="grid2"><TechStack stack={tech_stack} /><DirectoryMap directories={directory_map} /></div>
-        <ArchDiagram taskId={taskId} techStack={tech_stack} repoName={result.repo} />
+        <ArchDiagram taskId={taskId} repoName={result.repo} />
         <RepoStats openIssues={metadata.open_issues} goodFirstIssues={goodFirstIssues} />
         {issueError && <p className="notice error mt16" role="alert">{issueError}</p>}
       </div>

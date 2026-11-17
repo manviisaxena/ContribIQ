@@ -136,8 +136,11 @@ async def start_diagram(
         raise HTTPException(status_code=400, detail="Analysis not complete")
 
     data = result.return_value or {}
+    if not data.get("owner") or not data.get("repo"):
+        raise HTTPException(status_code=400, detail="Repository identity is missing. Run a new analysis.")
     task = await generate_diagram.kiq(
-        repo_name=data.get("repo", ""),
+        owner=data["owner"],
+        repo_name=data["repo"],
         description=data.get("metadata", {}).get("description"),
         tech_stack=data.get("tech_stack", []),
     )

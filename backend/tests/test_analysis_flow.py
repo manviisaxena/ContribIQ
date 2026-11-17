@@ -103,3 +103,31 @@ def test_worker_discovers_all_tasks_on_shared_broker(analysis_client):
 
     assert isinstance(broker.result_backend, RedisAsyncResultBackend)
     assert all(task.broker is broker for task in (analyze_repository, generate_diagram, score_issues))
+
+
+def test_diagram_job_receives_repository_identity_for_source_collection(analysis_client, monkeypatch):
+    client, routes = analysis_client
+    monkeypatch.setattr(routes, "_get_task_result", AsyncMock(return_value=SimpleNamespace(
+        is_err=False, return_value={
+            "status": "completed", "owner": "example", "repo": "orders",
+            "metadata": {"description": "Order processing"}, "tech_stack": ["Python"],
+        },
+    )))
+    enqueue = AsyncMock(return_value=SimpleNamespace(task_id="diagram-task"))
+    monkeypatch.setattr(routes.generate_diagram, "kiq", enqueue)
+    response = client.post("/analysis/analysis-task/diagram")
+    assert response.status_code == 200
+    enqueue.assert_awaited_once_with(
+        owner="example", repo_name="orders", description="Order processing", tech_stack=["Python"],
+    )
+
+
+def test_diagram_rejects_analysis_without_repository_identity(analysis_client, monkeypatch):
+    client, routes = analysis_client
+    monkeypatch.setattr(routes, "_get_task_result", AsyncMock(return_value=SimpleNamespace(
+        is_err=False, return_value={"status": "completed", "tech_stack": ["Python"]},
+    )))
+    enqueue = AsyncMock()
+    monkeypatch.setattr(routes.generate_diagram, "kiq", enqueue)
+    assert client.post("/analysis/analysis-task/diagram").status_code == 400
+    enqueue.assert_not_awaited()

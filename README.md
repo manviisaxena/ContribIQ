@@ -60,6 +60,16 @@ The download is approximately 4.7 GB. Ollama must remain running, and the model
 must appear in `ollama list`. After installing it, reload the repository overview
 to request a new diagram; previously failed jobs are not retried automatically.
 
+Architecture generation reads a bounded sample of the repository's README,
+entry points, routing/worker/database wiring, and Compose configuration from
+GitHub. The model describes application components and their connections, with
+source-file evidence for every node and edge; it does not turn the technology
+list into a diagram. Consulted files are listed below the diagram. This is a
+source-informed overview, not an exhaustive analysis or verified runtime trace.
+Source reads currently use public GitHub access. A repository without readable
+application source, failed source fetch, or invalid/unsupported model output
+fails explicitly instead of returning a generic technology-stack diagram.
+
 ---
 
 ## Feature Areas

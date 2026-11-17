@@ -5,22 +5,32 @@ import WorkflowIcon from './WorkflowIcon'
 
 interface ArchDiagramProps {
   taskId: string
-  techStack: string[]
   repoName: string
 }
 
-export default function ArchDiagram({ taskId, techStack, repoName }: ArchDiagramProps) {
+export default function ArchDiagram({ taskId, repoName }: ArchDiagramProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [diagramTaskId, setDiagramTaskId] = useState<string | null>(null)
   const [syntax, setSyntax] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'generating' | 'done' | 'error'>('idle')
   const [error, setError] = useState('')
+  const [sourceFiles, setSourceFiles] = useState<string[]>([])
+  const requestRef = useRef<{ taskId: string; promise: Promise<{ diagram_task_id: string }> } | null>(null)
 
   useEffect(() => {
-    if (techStack.length === 0) return
     let active = true
     setStatus('generating')
-    apiCall<{ diagram_task_id: string }>(`/analysis/${taskId}/diagram`, { method: 'POST' })
+    setError('')
+    setSyntax(null)
+    setSourceFiles([])
+    setDiagramTaskId(null)
+    if (requestRef.current?.taskId !== taskId) {
+      requestRef.current = {
+        taskId,
+        promise: apiCall<{ diagram_task_id: string }>(`/analysis/${taskId}/diagram`, { method: 'POST' }),
+      }
+    }
+    requestRef.current.promise
       .then(({ diagram_task_id }) => {
         if (!active) return
         setDiagramTaskId(diagram_task_id)
@@ -31,7 +41,7 @@ export default function ArchDiagram({ taskId, techStack, repoName }: ArchDiagram
         setStatus('error')
       })
     return () => { active = false }
-  }, [taskId, techStack])
+  }, [taskId])
 
   useEffect(() => {
     if (!diagramTaskId || status !== 'generating') return
@@ -44,14 +54,15 @@ export default function ArchDiagram({ taskId, techStack, repoName }: ArchDiagram
       setStatus('error')
     }, 120000)
     const poll = setInterval(() => {
-      apiCall<{ mermaid_syntax: string; status: string }>(`/analysis/diagram/${diagramTaskId}`)
-        .then(({ mermaid_syntax, status }) => {
+      apiCall<{ mermaid_syntax: string; status: string; source_files?: string[] }>(`/analysis/diagram/${diagramTaskId}`)
+        .then(({ mermaid_syntax, status, source_files }) => {
           if (!active) return
           if (status === 'completed' && mermaid_syntax) {
             clearInterval(poll)
             clearTimeout(timeout)
             active = false
             setSyntax(mermaid_syntax)
+            setSourceFiles(source_files ?? [])
             setStatus('done')
           }
         })
@@ -90,12 +101,12 @@ export default function ArchDiagram({ taskId, techStack, repoName }: ArchDiagram
     <section className="card mt16">
       <h2 className="ctitle">
         <span className="ctitle-icon"><WorkflowIcon name="stack" /></span>
-        Architecture Diagram
+        Application Architecture
       </h2>
-      {techStack.length === 0 && <p className="muted">A diagram is unavailable because no supported technology stack was detected.</p>}
-      {status === 'generating' && <p className="muted" role="status">Generating architecture diagram...</p>}
+      {status === 'generating' && <p className="muted" role="status">Reading repository source and generating application architecture...</p>}
       {status === 'error' && <p className="notice error" role="alert">{error} Diagram generation requires the background worker and the configured Ollama model.</p>}
       <div className="arch-wrap" ref={containerRef} />
+      {status === 'done' && sourceFiles.length > 0 && <p className="muted mt12">Inferred from {sourceFiles.join(', ')}. Shows application components and connections, not a verified runtime trace.</p>}
     </section>
   )
 }
