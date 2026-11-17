@@ -128,9 +128,27 @@ Open issues fetched from GitHub, scored for beginner-friendliness, then ranked a
 
 | Sub-feature | Status | Key files |
 |---|---|---|
-| Issue model + difficulty scoring | **Not started** | Needs `backend/models/issue.py`, `backend/services/issues_service.py`, `backend/worker/tasks/score_issues.py`, `alembic/versions/0007_create_issues.py`. Difficulty is a 1–5 average across files affected, cyclomatic complexity (radon), dependency count (tree-sitter), domain keywords, and estimated line changes |
-| AI issue matching (LLM ranks issues against profile) | **Not started** | Needs `backend/schemas/match.py`, `backend/services/matching_service.py`. Match score 0–100 with 3 plain-language reasons per issue |
+| Issue model + difficulty scoring | Backend implemented | `backend/models/issue.py`, `backend/services/issues_service.py`, `backend/services/difficulty_service.py`, `backend/worker/tasks/score_issues.py`, `alembic/versions/0007_create_issues.py`. Difficulty is a 1–5 average across files affected, cyclomatic complexity (radon), dependency count (tree-sitter), domain keywords, and estimated line changes |
+| AI issue matching (LLM ranks issues against profile) | Service implemented | `backend/schemas/match.py`, `backend/services/matching_service.py`. Match score rounded and clamped to 0–100, with exactly 3 non-empty plain-language reasons per issue |
 | Issue recommendations React screen | **Not started** | Needs `frontend/src/pages/IssuesPage.tsx`, `frontend/src/components/MatchRing.tsx`, `frontend/src/components/IssueCard.tsx`, `frontend/src/components/DifficultyDots.tsx` |
+
+The scoring task fetches all pages of open issues, excludes pull requests, and
+refreshes the database cache, including removing issues no longer open. Apply
+migration `0007` before running it. Source analysis samples up to five mentioned
+Python files per issue (200 KB each); other languages and unavailable source
+measurements use a neutral factor of 3. File paths are extracted from issue text,
+not linked PR diffs. Source API failures propagate rather than caching misleading
+scores.
+
+`match_issue` accepts profile and scored-issue dictionaries and returns a
+`MatchResult`. Scoring and matching are backend building blocks; automatic analysis
+pipeline orchestration and a matches HTTP endpoint are not wired up yet.
+
+Focused backend regression tests (install `pytest` in the backend environment):
+
+```bash
+python -m pytest backend/tests/test_issues_matching.py backend/tests/test_github_issues.py backend/tests/test_score_issues.py -q
+```
 
 ---
 

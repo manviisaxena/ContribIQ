@@ -9,5 +9,6 @@ dropping every table.
 from backend.models.user import User
 from backend.models.profile import ContributorProfile
 from backend.models.repository import Repository
+from backend.models.issue import Issue
 
-__all__ = ["User", "ContributorProfile", "Repository"]
+__all__ = ["User", "ContributorProfile", "Repository", "Issue"]
