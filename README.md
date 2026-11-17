@@ -47,6 +47,19 @@ npm run dev
 # → http://localhost:5173
 ```
 
+### Local AI model
+
+Start Ollama, then download the model used by diagram and onboarding generation:
+
+```bash
+ollama pull qwen2.5-coder:7b
+ollama list
+```
+
+The download is approximately 4.7 GB. Ollama must remain running, and the model
+must appear in `ollama list`. After installing it, reload the repository overview
+to request a new diagram; previously failed jobs are not retried automatically.
+
 ---
 
 ## Feature Areas
@@ -85,6 +98,9 @@ queued without it. Results are retained in Valkey for 24 hours. Step details
 currently arrive with the worker's completed result, while the dashboard shows
 indeterminate progress for up to two minutes. Submission has a separate timeout
 so an unavailable queue does not leave the form stuck indefinitely.
+The broker disables the Redis socket read timeout because its queue listener
+blocks while idle; timing out that read would restart workers and interrupt AI
+generation.
 
 Set the backend `FRONTEND_URL` to the exact frontend origin you use in the browser,
 including hostname and port (for example `http://127.0.0.1:5173`).
