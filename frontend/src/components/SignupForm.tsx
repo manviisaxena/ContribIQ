@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import Alert from './Alert'
 import GitHubButton from './GitHubButton'
-import { getGitHubOAuthUrl } from '../api/auth'
+import { getGitHubOAuthUrl, registerWithEmail } from '../api/auth'
+import { useAuth } from '../context/useAuth'
 import { validateEmail } from '../utils/validation'
 
 type AlertState = { message: string; variant: 'error' | 'info' | 'success' } | null
 
-export default function SignupForm() {
+interface Props {
+  onSuccess: () => void
+}
+
+export default function SignupForm({ onSuccess }: Props) {
+  const { login } = useAuth()
   const [name, setName]         = useState('')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -19,6 +25,7 @@ export default function SignupForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setNameError(''); setEmailError(''); setPwdError(''); setAlert(null)
 
     let valid = true
@@ -30,9 +37,20 @@ export default function SignupForm() {
     if (!valid) return
 
     setLoading(true)
-    await new Promise(r => setTimeout(r, 1200))
-    setLoading(false)
-    setAlert({ message: 'Account creation is coming soon. Try GitHub login for now.', variant: 'info' })
+    try {
+      const data = await registerWithEmail({
+        name: name.trim(), email: email.trim(), password,
+      })
+      login(data.token, data.user, false)
+      onSuccess()
+    } catch (err) {
+      setAlert({
+        message: err instanceof Error ? err.message : 'Could not create your account. Please try again.',
+        variant: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleGitHubClick() {

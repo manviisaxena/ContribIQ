@@ -63,6 +63,10 @@ The table below maps each user-facing feature to its implementation status and t
 | Auth state (React context) | Done | `frontend/src/context/AuthContext.tsx` |
 | Base API client (fetch wrapper) | Done | `frontend/src/api/client.ts` |
 
+Email signup submits to `POST /auth/register`, retrieves the new user's profile
+from `GET /auth/me`, and signs them in for the current browser session before
+redirecting to the dashboard. Registration errors are displayed on the form.
+
 ---
 
 ### GitHub OAuth

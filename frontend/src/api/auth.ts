@@ -32,12 +32,16 @@ export async function loginWithEmail(payload: LoginPayload): Promise<LoginRespon
     body: JSON.stringify({ email: payload.email, password: payload.password }),
   })
 
+  return getAuthenticatedUser(data.access_token)
+}
+
+async function getAuthenticatedUser(token: string): Promise<LoginResponse> {
   const me = await apiCall<BackendUser>('/auth/me', {
-    headers: { Authorization: `Bearer ${data.access_token}` },
+    headers: { Authorization: `Bearer ${token}` },
   })
 
   return {
-    token: data.access_token,
+    token,
     user: {
       id: me.id,
       email: me.email,
@@ -51,24 +55,12 @@ export async function registerWithEmail(payload: {
   password: string
   name?: string
 }): Promise<LoginResponse> {
-  const me = await apiCall<BackendUser>('/auth/register', {
+  const data = await apiCall<BackendLoginResponse>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 
-  const loginData = await apiCall<BackendLoginResponse>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email: payload.email, password: payload.password }),
-  })
-
-  return {
-    token: loginData.access_token,
-    user: {
-      id: me.id,
-      email: me.email,
-      name: me.name ?? me.email.split('@')[0],
-    },
-  }
+  return getAuthenticatedUser(data.access_token)
 }
 
 export async function requestPasswordReset(_email: string): Promise<void> {
