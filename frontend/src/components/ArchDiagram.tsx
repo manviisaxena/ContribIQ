@@ -1,6 +1,7 @@
 import mermaid from 'mermaid'
 import { useEffect, useRef, useState } from 'react'
 import { apiCall } from '../api/client'
+import WorkflowIcon from './WorkflowIcon'
 
 interface ArchDiagramProps {
   taskId: string
@@ -13,77 +14,88 @@ export default function ArchDiagram({ taskId, techStack, repoName }: ArchDiagram
   const [diagramTaskId, setDiagramTaskId] = useState<string | null>(null)
   const [syntax, setSyntax] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'generating' | 'done' | 'error'>('idle')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (techStack.length === 0) return
-
+    let active = true
+    setStatus('generating')
     apiCall<{ diagram_task_id: string }>(`/analysis/${taskId}/diagram`, { method: 'POST' })
       .then(({ diagram_task_id }) => {
+        if (!active) return
         setDiagramTaskId(diagram_task_id)
-        setStatus('generating')
       })
-      .catch(() => setStatus('error'))
+      .catch(reason => {
+        if (!active) return
+        setError(reason instanceof Error ? reason.message : 'Could not generate diagram.')
+        setStatus('error')
+      })
+    return () => { active = false }
   }, [taskId, techStack])
 
   useEffect(() => {
     if (!diagramTaskId || status !== 'generating') return
 
+    let active = true
+    const timeout = setTimeout(() => {
+      active = false
+      clearInterval(poll)
+      setError('Diagram generation timed out. Check that the worker and Ollama model are running.')
+      setStatus('error')
+    }, 120000)
     const poll = setInterval(() => {
       apiCall<{ mermaid_syntax: string; status: string }>(`/analysis/diagram/${diagramTaskId}`)
         .then(({ mermaid_syntax, status }) => {
+          if (!active) return
           if (status === 'completed' && mermaid_syntax) {
             clearInterval(poll)
+            clearTimeout(timeout)
+            active = false
             setSyntax(mermaid_syntax)
             setStatus('done')
           }
-          // status === 'pending': keep polling
         })
-        .catch(() => {
+        .catch(reason => {
+          if (!active) return
+          active = false
           clearInterval(poll)
+          clearTimeout(timeout)
+          setError(reason instanceof Error ? reason.message : 'Could not generate diagram.')
           setStatus('error')
         })
     }, 2000)
 
-    return () => clearInterval(poll)
+    return () => { active = false; clearInterval(poll); clearTimeout(timeout) }
   }, [diagramTaskId, status])
 
   useEffect(() => {
     if (!syntax || !containerRef.current) return
 
-    mermaid.initialize({ startOnLoad: false, theme: 'dark' })
+    mermaid.initialize({
+      startOnLoad: false, theme: 'base', securityLevel: 'strict',
+      themeVariables: { primaryColor: '#D1EFFF', primaryTextColor: '#002A86', primaryBorderColor: '#1B90FF', lineColor: '#89D1FF', fontFamily: 'system-ui, sans-serif' },
+    })
     mermaid
       .render(`arch-${repoName.replace(/\W/g, '-')}`, syntax)
       .then(({ svg }) => {
         if (containerRef.current) containerRef.current.innerHTML = svg
       })
-      .catch(() => setStatus('error'))
+      .catch(reason => {
+        setError(reason instanceof Error ? reason.message : 'The generated diagram could not be rendered.')
+        setStatus('error')
+      })
   }, [syntax, repoName])
 
-  if (techStack.length === 0) return null
-
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 'var(--r)',
-      padding: '20px 24px',
-      marginBottom: 16,
-    }}>
-      <h2 style={{ color: 'var(--white)', fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
+    <section className="card mt16">
+      <h2 className="ctitle">
+        <span className="ctitle-icon"><WorkflowIcon name="stack" /></span>
         Architecture Diagram
       </h2>
-
-      {status === 'generating' && (
-        <div style={{ color: 'var(--gm)', fontSize: 13 }}>Generating diagram…</div>
-      )}
-
-      {status === 'error' && (
-        <div style={{ color: 'var(--red)', fontSize: 13 }}>
-          Could not generate diagram
-        </div>
-      )}
-
-      <div ref={containerRef} style={{ overflowX: 'auto' }} />
-    </div>
+      {techStack.length === 0 && <p className="muted">A diagram is unavailable because no supported technology stack was detected.</p>}
+      {status === 'generating' && <p className="muted" role="status">Generating architecture diagram...</p>}
+      {status === 'error' && <p className="notice error" role="alert">{error} Diagram generation requires the background worker and the configured Ollama model.</p>}
+      <div className="arch-wrap" ref={containerRef} />
+    </section>
   )
 }

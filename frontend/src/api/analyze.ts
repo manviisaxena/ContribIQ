@@ -21,6 +21,20 @@ export interface AnalysisResult {
   }
   tech_stack: string[]
   directory_map: { directory: string; description: string }[]
+  issues?: RepositoryIssue[]
+  steps?: ProgressEvent[]
+}
+
+export interface RepositoryIssue {
+  number: number
+  title: string
+  body: string | null
+  state: string
+  labels: { name: string }[]
+  html_url: string
+  user?: { login: string }
+  created_at?: string
+  pull_request?: { url: string }
 }
 
 export interface ProgressEvent {
