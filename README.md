@@ -67,6 +67,28 @@ Email signup submits to `POST /auth/register`, retrieves the new user's profile
 from `GET /auth/me`, and signs them in for the current browser session before
 redirecting to the dashboard. Registration errors are displayed on the form.
 
+The dashboard accepts a public GitHub repository URL or `owner/repository`.
+Select **Analyze repository** to submit a background task and open the overview
+when it finishes. Submission, waiting, errors, and retry are shown on the page;
+the progress stream authenticates with the access-token header.
+
+Run the API and worker in separate terminals with the backend virtual environment
+active:
+
+```bash
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+taskiq worker backend.worker.broker:broker backend.worker.tasks
+```
+
+PostgreSQL and Valkey must be running. Keep the worker terminal open; tasks remain
+queued without it. Results are retained in Valkey for 24 hours. Step details
+currently arrive with the worker's completed result, while the dashboard shows
+indeterminate progress for up to two minutes. Submission has a separate timeout
+so an unavailable queue does not leave the form stuck indefinitely.
+
+Set the backend `FRONTEND_URL` to the exact frontend origin you use in the browser,
+including hostname and port (for example `http://127.0.0.1:5173`).
+
 ---
 
 ### GitHub OAuth
