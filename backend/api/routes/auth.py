@@ -60,7 +60,11 @@ async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(ge
     result = await db.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
 
-    if not user or not user.is_active or not user.hashed_password or not verify_password(body.password, user.hashed_password):
+    import asyncio
+    pw_ok = user and user.is_active and user.hashed_password and await asyncio.get_event_loop().run_in_executor(
+        None, verify_password, body.password, user.hashed_password
+    )
+    if not pw_ok:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     return token_response(
