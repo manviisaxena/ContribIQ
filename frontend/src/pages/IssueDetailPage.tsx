@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getIssueDetail, getReadinessScore, getSimilarRepos, type IssueDetail, type ReadinessResult, type SimilarRepo } from '../api/analyze'
+import { getIssueDetail, getReadinessScore, type IssueDetail, type ReadinessResult } from '../api/analyze'
 import { useWorkflow } from '../hooks/useWorkflow'
 import { getIssueLoadError, getOpenIssues } from '../utils/issues'
 import WorkflowHeader from '../components/WorkflowHeader'
@@ -11,7 +11,7 @@ import SimilarPRs from '../components/SimilarPRs'
 import ImpactChain from '../components/ImpactChain'
 import ReadinessScore from '../components/ReadinessScore'
 
-const tabs = ['Understanding', 'Implementation', 'Similar PRs', 'Checklist', 'Readiness', 'Similar Repos'] as const
+const tabs = ['Understanding', 'Implementation', 'Similar PRs', 'Checklist', 'Readiness'] as const
 const checklist = [
   'Read the issue description and discussion',
   'Read the repository README and contribution guidelines',
@@ -38,8 +38,6 @@ export default function IssueDetailPage() {
   const [detailError, setDetailError] = useState('')
   const [readiness, setReadiness] = useState<ReadinessResult | null>(null)
   const [readinessLoading, setReadinessLoading] = useState(false)
-  const [similarRepos, setSimilarRepos] = useState<SimilarRepo[] | null>(null)
-  const [similarReposLoading, setSimilarReposLoading] = useState(false)
   const [showFactors, setShowFactors] = useState(false)
   const factorsCloseRef = useRef<HTMLButtonElement>(null)
 
@@ -69,17 +67,6 @@ export default function IssueDetailPage() {
       .finally(() => { if (active) setReadinessLoading(false) })
     return () => { active = false }
   }, [tab, issue?.number, taskId, readiness, readinessLoading])
-
-  useEffect(() => {
-    if (tab !== 5 || similarRepos !== null || similarReposLoading) return
-    let active = true
-    setSimilarReposLoading(true)
-    getSimilarRepos(taskId)
-      .then(r => { if (active) setSimilarRepos(r) })
-      .catch(() => { if (active) setSimilarRepos([]) })
-      .finally(() => { if (active) setSimilarReposLoading(false) })
-    return () => { active = false }
-  }, [tab, taskId, similarRepos, similarReposLoading])
 
   useEffect(() => {
     if (!showFactors) return
@@ -269,45 +256,6 @@ export default function IssueDetailPage() {
               <div className="cta-box mt16"><h4 className="cta-ttl">Ready to explore the issue?</h4><p className="cta-sub">Confirm the latest discussion and availability on GitHub.</p><a className="cta-btn" href={issueURL} target="_blank" rel="noreferrer">View Issue on GitHub</a></div>
             </section>
             <section className="card"><h3 className="ctitle">Your Checklist Progress</h3><div className="readiness-score"><div className="rs-big">{checked.length}/{checklist.length}</div><p className="rs-lbl">Checklist items completed</p></div><p className="muted readiness-note">Self-reported checklist progress, not an AI readiness score or skill assessment.</p><button className="btn btn-s mt16" onClick={() => setTab(3)}>Review Checklist</button></section>
-          </div>}
-          {tab === 5 && <div>
-            <p className="muted" style={{ marginBottom: 16 }}>
-              Repositories with a similar tech stack and beginner-friendly issues. Explore them or run a ContribIQ analysis to find your next contribution.
-            </p>
-            {similarReposLoading && <p className="notice">Finding similar repositories...</p>}
-            {!similarReposLoading && similarRepos !== null && similarRepos.length === 0 && (
-              <p className="notice">No similar repositories found. Try browsing GitHub topics or searching for your tech stack.</p>
-            )}
-            {!similarReposLoading && similarRepos && similarRepos.length > 0 && (
-              <div className="similar-repos-list">
-                {similarRepos.map(repo => {
-                    return (
-                    <div className="similar-repo-card" key={repo.full_name}>
-                      <div className="similar-repo-top">
-                        <span className="similar-repo-name">{repo.full_name}</span>
-                        <div className="similar-repo-meta">
-                          {repo.language && <span className="badge badge-blue">{repo.language}</span>}
-                          <span className="similar-repo-stat">★ {repo.stars.toLocaleString()}</span>
-                          <span className="similar-repo-stat">{repo.open_issues} open issues</span>
-                        </div>
-                      </div>
-                      {repo.description && <p className="similar-repo-desc">{repo.description}</p>}
-                      {repo.topics.length > 0 && (
-                        <div className="issue-tags">{repo.topics.slice(0, 5).map(t => <span className="badge badge-gray" key={t}>{t}</span>)}</div>
-                      )}
-                      <div className="similar-repo-actions">
-                        <Link className="btn btn-p" to={`/?repo=https://github.com/${repo.full_name}`}>
-                          Analyze with ContribIQ
-                        </Link>
-                        <a className="btn btn-s" href={repo.html_url} target="_blank" rel="noreferrer">
-                          View on GitHub ↗
-                        </a>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
           </div>}
         </div>
       </div>
