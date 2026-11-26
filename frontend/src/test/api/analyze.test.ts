@@ -155,4 +155,38 @@ describe('analyze API', () => {
       await expect(getGeneratedIssues('bad-task')).rejects.toThrow('Analysis not found')
     })
   })
+
+  describe('getSimilarRepos', () => {
+    it('calls correct endpoint and returns repo list', async () => {
+      const fakeRepos = [
+        {
+          full_name: 'org/awesome-project',
+          description: 'A great project',
+          stars: 1234,
+          language: 'TypeScript',
+          topics: ['react', 'web'],
+          html_url: 'https://github.com/org/awesome-project',
+          open_issues: 5,
+        },
+      ]
+      mockApiCall.mockResolvedValueOnce(fakeRepos)
+      const { getSimilarRepos } = await import('../../api/analyze')
+      const result = await getSimilarRepos('task-1')
+      expect(result).toEqual(fakeRepos)
+      expect(mockApiCall).toHaveBeenCalledWith('/analysis/result/task-1/similar-repos')
+    })
+
+    it('returns empty array when no similar repos found', async () => {
+      mockApiCall.mockResolvedValueOnce([])
+      const { getSimilarRepos } = await import('../../api/analyze')
+      const result = await getSimilarRepos('task-1')
+      expect(result).toEqual([])
+    })
+
+    it('propagates errors from apiCall', async () => {
+      mockApiCall.mockRejectedValueOnce(new Error('Not found'))
+      const { getSimilarRepos } = await import('../../api/analyze')
+      await expect(getSimilarRepos('bad-task')).rejects.toThrow('Not found')
+    })
+  })
 })
