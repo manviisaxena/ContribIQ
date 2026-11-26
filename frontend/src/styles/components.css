@@ -322,3 +322,60 @@
   font-size: 12px;
   text-decoration: none;
 }
+
+/* ── Similar Repos Tab ──────────────────────────────────────────────────── */
+.similar-repos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.similar-repo-card {
+  padding: 16px 18px;
+  border: 1px solid var(--gl, #e0e0e0);
+  border-radius: 10px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.similar-repo-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.similar-repo-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--black, #111);
+}
+
+.similar-repo-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.similar-repo-stat {
+  font-size: 12px;
+  color: var(--gd, #555);
+}
+
+.similar-repo-desc {
+  font-size: 13px;
+  color: var(--gd, #444);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.similar-repo-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
