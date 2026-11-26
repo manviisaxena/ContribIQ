@@ -7,6 +7,39 @@ import { getIssueLoadError, getOpenIssues } from '../utils/issues'
 import WorkflowHeader from '../components/WorkflowHeader'
 import WorkflowIcon from '../components/WorkflowIcon'
 
+function buildGitHubIssueUrl(owner: string, repo: string, issue: GeneratedIssue): string {
+  const kindLabel = issue.gap_kind === 'todo' ? 'TODO/FIXME' : issue.gap_kind === 'untested' ? 'Missing Tests' : 'Missing Docs'
+  const filesSection = issue.files_affected.length > 0
+    ? `\n\n**Files affected:**\n${issue.files_affected.map(f => `- \`${f}\``).join('\n')}`
+    : ''
+  const skillsSection = issue.skills.length > 0
+    ? `\n\n**Skills needed:** ${issue.skills.join(', ')}`
+    : ''
+  const body = [
+    `**Task Description**`,
+    issue.description,
+    ``,
+    `**Motivation**`,
+    issue.why_beginner_friendly,
+    ``,
+    `**Type:** ${kindLabel} · **Difficulty:** ${issue.difficulty.toFixed(1)}/5 · **Estimated time:** ~${issue.estimated_hours}h`,
+    filesSection,
+    skillsSection,
+    ``,
+    `**Acceptance Criteria**`,
+    `- [ ] `,
+    ``,
+    `> _This issue was suggested by [ContribIQ](https://github.com/nooriegarg/ContribIQ) codebase analysis._`,
+  ].join('\n')
+
+  const params = new URLSearchParams({
+    title: issue.title,
+    body,
+    labels: 'good first issue',
+  })
+  return `https://github.com/${owner}/${repo}/issues/new?${params.toString()}`
+}
+
 function MatchRing({ pct }: { pct: number }) {
   const r = 26
   const circ = 2 * Math.PI * r
@@ -173,6 +206,14 @@ export default function IssuesPage() {
                     {issue.skills.length > 0 && (
                       <div className="issue-tags">{issue.skills.map(s => <span className="badge badge-blue" key={s}>{s}</span>)}</div>
                     )}
+                    <a
+                      className="btn btn-s generated-open-btn"
+                      href={buildGitHubIssueUrl(result.owner, result.repo, issue)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open on GitHub ↗
+                    </a>
                   </div>
                 ))}
               </div>

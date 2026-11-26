@@ -316,3 +316,9 @@
   padding: 1px 6px;
   color: #222222;
 }
+.generated-open-btn {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 12px;
+  text-decoration: none;
+}
